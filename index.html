@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OrthoAxis Planner</title>
+<meta name="theme-color" content="#0b0f14">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OrthoAxis">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon-192.png">
+<style>
+:root{--bg:#0b0f14;--pn:#141b24;--p2:#1b2531;--fg:#e8eef4;--mut:#8da0b3;--ac:#35c4d0;--bd:#2a3846;color-scheme:dark;box-sizing:border-box;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+header{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--pn);border-bottom:1px solid var(--bd)}
+header b{letter-spacing:.08em;color:var(--ac)}header span{color:var(--mut)}
+input,select{font:inherit;background:var(--bg);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:6px 8px;min-width:0}
+input[type=number]{width:84px}#cn{width:150px}
+.b{background:var(--p2);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font:inherit;cursor:pointer;text-align:start;min-height:40px}
+.b.pri{background:var(--ac);color:#06232a;border-color:var(--ac);font-weight:700}.b:disabled{opacity:.4;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+#app{flex:1;min-height:0;display:grid;grid-template-columns:136px 1fr;grid-template-rows:minmax(0,1fr) auto;grid-template-areas:"p1 cv" "p1 p2"}
+#p1{grid-area:p1;overflow:auto;background:var(--pn);padding:8px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--bd)}
+#p1 h6{margin:6px 0 0;color:var(--mut);font-size:11px;letter-spacing:.08em}
+#cvw{grid-area:cv;position:relative;min-height:0;display:flex;gap:4px}.vw{flex:1;position:relative;min-width:0;border:2px solid transparent}.vw.on{border-color:var(--ac)}.vt{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.6);padding:2px 4px 2px 8px;border-radius:8px;font-size:11px;display:flex;align-items:center;gap:4px}.vt button{background:transparent;border:0;color:var(--fg);font-size:16px;cursor:pointer}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#hint{position:absolute;left:8px;right:8px;top:8px;background:rgba(0,0,0,.65);padding:6px 10px;border-radius:8px;font-size:12px;pointer-events:none}
+#p2{grid-area:p2;max-height:42vh;overflow:auto;background:var(--pn);border-top:1px solid var(--bd)}
+.stp{display:flex;gap:6px;padding:8px 10px 0;overflow-x:auto}
+.st{flex:1 0 auto;display:flex;align-items:center;gap:8px;background:transparent;color:var(--mut);border:0;border-bottom:3px solid var(--bd);padding:8px 10px;font:inherit;font-weight:700;font-size:12px;letter-spacing:.05em;cursor:pointer}
+.st i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--p2);display:grid;place-items:center}
+.st.on{color:var(--fg);border-color:var(--ac)}.st.on i{background:var(--ac);color:#06232a}.st:disabled{opacity:.35;cursor:default}
+.bd{padding:6px 12px 12px}details summary{cursor:pointer;margin:8px 0 2px}.gh{color:var(--mut);font-size:11px;letter-spacing:.08em;margin:10px 0 2px}.mut{color:var(--mut);font-size:12px}.pr{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0}.pr label{width:170px}.pr small{color:var(--mut)}.pr .s{flex:1 0 100%;font-size:12px;padding-left:2px}.pr .s:empty{display:none}.ck{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:13px}.lmg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.lm{font-size:12px;min-height:34px;padding:5px 8px}.rw{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}.inf{color:var(--fg);font-size:13px;min-height:20px}
+@media(max-width:720px){#app{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;grid-template-areas:"p1" "cv" "p2"}#p1{flex-direction:row;overflow-x:auto;border-right:0;border-bottom:1px solid var(--bd)}#p1 .b{flex:0 0 auto}#p1 h6{display:none}#p2{max-height:46vh}}
+</style></head><body>
+<header><b>ORTHOAXIS</b><span>Case</span><input id="cn" value="Case-001" aria-label="Case name"><span style="flex:1"></span></header>
+<div id="app">
+<aside id="p1">
+<h6>PLANE</h6><button class="b pl pri" onclick="setPlane(0)">Coronal · AP</button><button class="b pl" onclick="setPlane(1)">Sagittal · Lat</button><h6>CASE</h6>
+<button class="b" onclick="newCase()">New case</button>
+<button class="b" onclick="$('#fi').click()">Upload X-ray</button>
+<button class="b" onclick="saveCase()">Save case</button>
+<button class="b" onclick="$('#fj').click()">Load case</button>
+<h6>EDIT</h6>
+<button class="b" onclick="undo()">Undo</button><button class="b" onclick="redoF()">Redo</button>
+<h6>TOOLS</h6>
+<button class="b" onclick="startArm('dist')">Measure</button><button class="b" onclick="startArm('ang')">Angle</button>
+<button class="b" onclick="clearM()">Clear measures</button><button class="b" onclick="fit();R()">Fit view</button>
+<h6>OUTPUT</h6>
+<button class="b" onclick="exportPNG()">Export image</button>
+</aside>
+<div id="cvw"><div class="vw on" id="v0"><canvas id="c0"></canvas><span class="vt">AP · coronal <button onclick="pick(0);$('#fi').click()" aria-label="Upload AP">📂</button></span></div><div class="vw" id="v1"><canvas id="c1"></canvas><span class="vt">LATERAL · sagittal <button onclick="pick(1);$('#fi').click()" aria-label="Upload lateral">📂</button></span></div><div id="hint"></div></div>
+<section id="p2"></section>
+</div>
+<input id="fi" type="file" accept="image/*" hidden><input id="fj" type="file" accept=".json,application/json" hidden>
+<script>
+const $=s=>document.querySelector(s);
+const mkS=()=>({px:0,mm:25,cal:null,ax:null,osts:[],m:[],lm:[],bone:''}),AN={same:true};
+let dpr=1,stage=1,maxS=1,view='corr',q=0,sel=0,lay=0;
+const SH=[0,1].map(i=>({cv:$('#c'+i),ctx:$('#c'+i).getContext('2d'),W:0,H:0,V:{s:1,x:0,y:0},img:null,imgURL:'',S:mkS(),hist:[],redo:[],pl:i?'sag':'cor',act:-1,drag:null,pinch:null,arm:null,ptrs:new Map()}));
+let cur=SH[0];
+for(const k of ['cv','ctx','W','H','V','img','imgURL','S','hist','redo','act','drag','pinch','arm','ptrs'])Object.defineProperty(window,k,{get(){return cur[k]},set(v){cur[k]=v},configurable:true});
+const use=i=>{cur=SH[i]},ON=(ev,f,o)=>SH.forEach((sh,i)=>sh.cv.addEventListener(ev,e=>{if(sel!=i)pick(i);use(i);f(e)},o));
+const D=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y),w2s=(x,y)=>[x*V.s+V.x,y*V.s+V.y],s2w=(x,y)=>[(x-V.x)/V.s,(y-V.y)/V.s];
+const R=()=>{if(!q){q=1;requestAnimationFrame(()=>{q=0;SH.forEach((sh,i)=>{use(i);draw()});use(sel)})}},mmS=v=>S.px?(v/S.px).toFixed(1)+' mm':Math.round(v)+' px';
+const snap=()=>{hist.push(JSON.stringify(S));redo=[]};
+function undo(){if(!hist.length)return;redo.push(JSON.stringify(S));S=JSON.parse(hist.pop());act=Math.min(act,S.osts.length-1);arm=null;renderPanel();R()}
+function redoF(){if(!redo.length)return;hist.push(JSON.stringify(S));S=JSON.parse(redo.pop());act=Math.min(act,S.osts.length-1);renderPanel();R()}
+function resize(){dpr=devicePixelRatio||1;SH.forEach((sh,i)=>{use(i);const r=cv.getBoundingClientRect();W=r.width;H=r.height;cv.width=W*dpr;cv.height=H*dpr});use(sel);R()}
+addEventListener('resize',resize);
+function fit(){if(!img||!W)return;V.s=Math.min(W/img.width,H/img.height)*.96;V.x=(W-img.width*V.s)/2;V.y=(H-img.height*V.s)/2}
+/* ---------- geometry ---------- */
+function cora(){const a=S.ax;if(!a)return null;const[p0,p1]=a.p,[d0,d1]=a.d,r={x:p1.x-p0.x,y:p1.y-p0.y},s={x:d1.x-d0.x,y:d1.y-d0.y},den=r.x*s.y-r.y*s.x;if(Math.abs(den)<1e-6)return null;const t=((d0.x-p0.x)*s.y-(d0.y-p0.y)*s.x)/den;return{x:p0.x+t*r.x,y:p0.y+t*r.y}}
+function dA(){return dAof(S)}
+function dAof(Z){const a=Z.ax,p=[a.p[1].x-a.p[0].x,a.p[1].y-a.p[0].y],d=[a.d[1].x-a.d[0].x,a.d[1].y-a.d[0].y];return Math.atan2(d[0]*p[1]-d[1]*p[0],d[0]*p[0]+d[1]*p[1])*180/Math.PI}
+const mul=(A,B)=>[A[0]*B[0]+A[2]*B[1],A[1]*B[0]+A[3]*B[1],A[0]*B[2]+A[2]*B[3],A[1]*B[2]+A[3]*B[3],A[0]*B[4]+A[2]*B[5]+A[4],A[1]*B[4]+A[3]*B[5]+A[5]];
+const rot=(t,h)=>{const c=Math.cos(t),s=Math.sin(t);return[c,s,-s,c,h.x-c*h.x+s*h.y,h.y-s*h.x-c*h.y]};
+const tp=(p,M)=>({x:M[0]*p.x+M[2]*p.y+M[4],y:M[1]*p.x+M[3]*p.y+M[5]});
+const side=(o,p)=>Math.sign((o.B.x-o.A.x)*(p.y-o.A.y)-(o.B.y-o.A.y)*(p.x-o.A.x))==o.side||(o.type=='dome'&&D(o.H,p)<domeR(o));
+function mats(){const a=S.ax,v={x:a.d[1].x-a.p[0].x,y:a.d[1].y-a.p[0].y},pr=h=>(h.x-a.p[0].x)*v.x+(h.y-a.p[0].y)*v.y,o=[...S.osts].sort((x,y)=>pr(x.H)-pr(y.H));let M=[1,0,0,1,0,0];const out=[M];for(const k of o){M=mul(M,rot(k.ang*Math.PI/180,k.H));out.push(M)}return{o,out}}
+const segOf=(o,p)=>o.filter(k=>side(k,p)).length;
+function halfP(c,o,dist){const ux=o.B.x-o.A.x,uy=o.B.y-o.A.y,l=Math.hypot(ux,uy)||1,a=ux/l,b=uy/l,n=(dist?1:-1)*o.side,K=1e5,A=o.A;c.beginPath();c.moveTo(A.x-a*K,A.y-b*K);c.lineTo(A.x+a*K,A.y+b*K);c.lineTo(A.x+a*K-b*n*K,A.y+b*K+a*n*K);c.lineTo(A.x-a*K-b*n*K,A.y-b*K+a*n*K);c.closePath()}
+const domeR=o=>Math.max(D(o.H,o.A),D(o.H,o.B));
+function circP(c,o){c.beginPath();c.arc(o.H.x,o.H.y,domeR(o),0,7)}
+let TC=null;
+function drawCorr(){const{o,out}=mats();TC=TC||document.createElement('canvas');if(TC.width!=cv.width||TC.height!=cv.height){TC.width=cv.width;TC.height=cv.height}const t=TC.getContext('2d'),B=[dpr*V.s,0,0,dpr*V.s,dpr*V.x,dpr*V.y];
+for(let j=0;j<=o.length;j++){t.setTransform(1,0,0,1,0,0);t.globalCompositeOperation='source-over';t.clearRect(0,0,TC.width,TC.height);t.setTransform(...B);t.transform(...out[j]);
+if(j==0)t.drawImage(img,0,0);else{const p=o[j-1];t.save();halfP(t,p,1);t.clip();t.drawImage(img,0,0);t.restore();if(p.type=='dome'){t.save();circP(t,p);t.clip();t.drawImage(img,0,0);t.restore()}}
+if(j<o.length){const p=o[j];t.globalCompositeOperation='destination-out';halfP(t,p,1);t.fill();if(p.type=='dome'){circP(t,p);t.fill()}t.globalCompositeOperation='source-over'}
+ctx.setTransform(1,0,0,1,0,0);ctx.drawImage(TC,0,0)}
+ctx.setTransform(dpr,0,0,dpr,0,0)}
+const corrV=()=>stage==3&&view=='corr'&&S.osts.length>0&&!!S.ax;
+/* ---------- drawing ---------- */
+function ln(a,b,c,w=2.5,d=0){const p=w2s(a.x,a.y),r=w2s(b.x,b.y);ctx.strokeStyle=c;ctx.lineWidth=w;ctx.setLineDash(d?[7,5]:[]);ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(r[0],r[1]);ctx.stroke();ctx.setLineDash([])}
+function dt(p,c,r=8){const s=w2s(p.x,p.y);ctx.beginPath();ctx.arc(s[0],s[1],r,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=c;ctx.stroke()}
+function tx(t,x,y,c='#fff'){ctx.font='700 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.85)';ctx.strokeText(t,x,y);ctx.fillStyle=c;ctx.fillText(t,x,y)}
+const mid=(a,b)=>w2s((a.x+b.x)/2,(a.y+b.y)/2);
+function draw(){derive();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+if(!img){ctx.fillStyle='#8da0b3';ctx.font='16px system-ui';ctx.textAlign='center';ctx.fillText('Upload '+(cur.pl=='cor'?'AP (coronal)':'lateral (sagittal)')+' X-ray',W/2,H/2);return}
+const cr=corrV();ctx.setTransform(dpr*V.s,0,0,dpr*V.s,dpr*V.x,dpr*V.y);if(cr)drawCorr();else ctx.drawImage(img,0,0);ctx.setTransform(dpr,0,0,dpr,0,0);
+const a=S.ax;
+if(stage==1&&S.cal){ln(S.cal[0],S.cal[1],'#facc15');S.cal.forEach(p=>dt(p,'#facc15'));const m=mid(S.cal[0],S.cal[1]);tx(Math.round(D(S.cal[0],S.cal[1]))+' px',m[0],m[1]-16)}
+if(stage>=2&&!cr)drawLM();
+if(stage>=2&&a){const c=cora();let d0=a.d[0],d1=a.d[1];
+ if(cr){const{o,out}=mats();d0=tp(d0,out[segOf(o,d0)]);d1=tp(d1,out[segOf(o,d1)])}
+ else if(c){ln(a.p[1],c,'#60a5fa',1.5,1);ln(a.d[0],c,'#4ade80',1.5,1)}
+ ln(a.p[0],a.p[1],'#60a5fa');ln(d0,d1,'#4ade80');
+ 
+ if(c){const s=w2s(c.x,c.y);ctx.strokeStyle='#f43f5e';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(s[0],s[1],12,0,7);ctx.moveTo(s[0]-20,s[1]);ctx.lineTo(s[0]+20,s[1]);ctx.moveTo(s[0],s[1]-20);ctx.lineTo(s[0],s[1]+20);ctx.stroke();tx('CORA',s[0]+34,s[1]-16,'#fb7185')}}
+if(stage==3&&view=='plan')S.osts.forEach((o,i)=>{const on=i==act,c=on?'#f59e0b':'#d9a441',t=o.ang*Math.PI/180,r=rot(t,o.H);ln(o.A,o.B,c,on?4:2.5);if(o.type=='dome'){const z=w2s(o.H.x,o.H.y);ctx.setLineDash([6,5]);ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();ctx.arc(z[0],z[1],domeR(o)*V.s,0,7);ctx.stroke();ctx.setLineDash([])}const A2=tp(o.A,r),B2=tp(o.B,r);ln(o.H,A2,'#c4b5fd',1.5,1);ln(o.H,B2,'#c4b5fd',1.5,1);dt(o.A,c);dt(o.B,c);dt(o.H,'#a78bfa',10);const m=w2s(o.H.x,o.H.y);tx('#'+(i+1)+' '+o.ang+'°',m[0],m[1]-20,'#fcd34d')});
+for(const m of S.m){const P=m.pts;ln(P[0],P[1],'#f472b6');if(m.t=='d'){const s=mid(P[0],P[1]);tx(mmS(D(P[0],P[1])),s[0],s[1]-16)}else{ln(P[1],P[2],'#f472b6');const a1=Math.atan2(P[0].y-P[1].y,P[0].x-P[1].x),a2=Math.atan2(P[2].y-P[1].y,P[2].x-P[1].x),df=Math.atan2(Math.sin(a2-a1),Math.cos(a2-a1)),s=w2s(P[1].x,P[1].y);ctx.beginPath();ctx.arc(s[0],s[1],24,a1,a1+df,df<0);ctx.stroke();const md=a1+df/2;tx((Math.abs(df)*180/Math.PI).toFixed(1)+'°',s[0]+Math.cos(md)*46,s[1]+Math.sin(md)*46)}P.forEach(p=>dt(p,'#f472b6'))}
+if(arm)arm.pts.forEach(p=>dt(p,'#fff',6));
+if(drag&&drag.t=='h'&&W){const z=w2s(drag.p.x,drag.p.y),r=55,lx=z[0]<W/2?W-r-14:r+14,ly=r+46,sw=2*r/(V.s*3);ctx.save();ctx.beginPath();ctx.arc(lx,ly,r,0,7);ctx.clip();ctx.fillStyle='#000';ctx.fillRect(lx-r,ly-r,2*r,2*r);ctx.drawImage(img,drag.p.x-sw/2,drag.p.y-sw/2,sw,sw,lx-r,ly-r,2*r,2*r);ctx.restore();ctx.strokeStyle='#35c4d0';ctx.lineWidth=2;ctx.beginPath();ctx.arc(lx,ly,r,0,7);ctx.moveTo(lx-14,ly);ctx.lineTo(lx+14,ly);ctx.moveTo(lx,ly-14);ctx.lineTo(lx,ly+14);ctx.stroke()}}
+/* ---------- interaction ---------- */
+function hp(){const r=[];if(stage==1&&S.cal)r.push(...S.cal);if(stage>=2&&!corrV()&&S.lm)r.push(...S.lm.filter(Boolean));if(stage==3&&view=='plan')for(const o of S.osts)r.push(o.A,o.B,o.H);for(const m of S.m)r.push(...m.pts);return r}
+function down(x,y){if(!img)return;const[wx,wy]=s2w(x,y);if(arm){place(wx,wy);return}
+const r=hp();for(let i=r.length-1;i>=0;i--){const s=w2s(r[i].x,r[i].y);if(Math.hypot(s[0]-x,s[1]-y)<22){drag={t:'h',p:r[i],sn:0};return}}
+if(stage==2&&cur.lmi!=null){setLM(wx,wy);return}
+drag={t:'pan',x,y,vx:V.x,vy:V.y}}
+function move(x,y){if(!drag)return;const[wx,wy]=s2w(x,y);if(drag.t=='pan'){V.x=drag.vx+x-drag.x;V.y=drag.vy+y-drag.y}else{if(!drag.sn){snap();drag.sn=1}drag.p.x=wx;drag.p.y=wy;upd()}R()}
+ON('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);
+if(ptrs.size==2){drag=null;const[a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1])||1,s:V.s,w:s2w((a[0]+b[0])/2,(a[1]+b[1])/2)};return}
+if(ptrs.size==1)down(e.offsetX,e.offsetY)});
+ON('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,[e.offsetX,e.offsetY]);
+if(pinch&&ptrs.size>=2){const[a,b]=[...ptrs.values()],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];V.s=Math.min(40,Math.max(.03,pinch.s*Math.hypot(a[0]-b[0],a[1]-b[1])/pinch.d));V.x=m[0]-pinch.w[0]*V.s;V.y=m[1]-pinch.w[1]*V.s;R();return}
+move(e.offsetX,e.offsetY)});
+const end=e=>{if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)drag=null};
+ON('pointerup',end);ON('pointercancel',end);
+ON('wheel',e=>{e.preventDefault();const w=s2w(e.offsetX,e.offsetY);V.s=Math.min(40,Math.max(.03,V.s*Math.exp(-e.deltaY*.0015)));V.x=e.offsetX-w[0]*V.s;V.y=e.offsetY-w[1]*V.s;R()},{passive:false});
+/* ---------- placing ---------- */
+const AX=['Proximal axis: point 1 (far end)','Proximal axis: point 2 (toward the deformity)','Distal axis: point 1 (toward the deformity)','Distal axis: point 2 (far end)'],NEED={cal:2,lm:10,dist:2,ang:3};
+function startArm(t){if(!img)return alert('Upload an X-ray first');arm={t,pts:[]};hintUpd();R()}
+function place(x,y){arm.pts.push({x,y});const t=arm.t;if(arm.pts.length==NEED[t]){snap();const P=arm.pts;arm=null;
+if(t=='cal')S.cal=P;else if(t=='lm'){S.lm=P;S.bone=''}else S.m.push({t:t=='dist'?'d':'a',pts:P});renderPanel()}hintUpd();R()}
+function hintUpd(){let h;if(arm)h=arm.t=='lm'?LMN(cur.pl)[arm.pts.length]+' · '+(arm.pts.length+1)+'/10':({cal:'Calibration',dist:'Measure',ang:'Angle (vertex = 2nd point)'}[arm.t])+': tap point '+(arm.pts.length+1)+' of '+NEED[arm.t];else h=['','1 · CALIBRATE: mark a known distance, enter its length, then confirm.','2 · DETERMINE CORA: mark the 10 landmarks (hip, knee, ankle, joint lines); angles and CORA are calculated automatically. Drag points to refine.','3 · PREVIEW: add osteotomies, set angle and type, compare the three views.'][stage];if(!arm&&stage==2&&cur.lmi!=null)h='Place: '+LMN(cur.pl)[cur.lmi]+' — tap the image, then drag to fine-tune';$('#hint').textContent=(cur.pl=='cor'?'AP · ':'LATERAL · ')+h}
+function clearM(){if(S.m.length){snap();S.m=[];R()}}
+/* ---------- stages ---------- */
+function go(n){stage=n;arm=null;cur.lmi=null;renderPanel();R()}
+function okCal(){S.px=D(S.cal[0],S.cal[1])/S.mm;maxS=Math.max(maxS,2);go(2)}
+function skip(){S.px=0;maxS=Math.max(maxS,2);go(2)}
+function okCora(){maxS=3;view='corr';if(!S.osts.length)addOst();go(3)}
+function addOst(){const c=cora();if(!c)return;snap();const p=S.ax.p,d=S.ax.d,n=v=>{const l=Math.hypot(v.x,v.y)||1;return{x:v.x/l,y:v.y/l}},vp=n({x:p[1].x-p[0].x,y:p[1].y-p[0].y}),vd=n({x:d[1].x-d[0].x,y:d[1].y-d[0].y}),b=n({x:vp.x+vd.x,y:vp.y+vd.y}),L=img.width*.12,A={x:c.x+b.y*L,y:c.y-b.x*L},B={x:c.x-b.y*L,y:c.y+b.x*L},sd=Math.sign((B.x-A.x)*(d[1].y-A.y)-(B.y-A.y)*(d[1].x-A.x))||1;
+S.osts.push({A,B,H:{x:c.x,y:c.y},ang:S.osts.length?0:+dA().toFixed(1),type:'closing',side:sd});act=S.osts.length-1;applyType(S.osts[act]);if(stage==3)renderPanel();R()}
+function setAng(v){snap();S.osts[act].ang=+v||0;R();upd()}
+function delOst(){if(act<0)return;snap();S.osts.splice(act,1);act=Math.min(act,S.osts.length-1);renderPanel();R()}
+function renderPanel(){const st=['CALIBRATE PHOTO','DETERMINE CORA','PREVIEW OSTEOTOMY'];
+let h='<div class="stp">'+st.map((s,i)=>`<button class="st${stage==i+1?' on':''}" ${i+1>maxS?'disabled':''} onclick="go(${i+1})"><i>${i+1}</i>${s}</button>`).join('')+'</div><div class="bd">';
+if(stage==1)h+=`<div class="rw"><button class="b pri" onclick="startArm('cal')">${S.cal?'Re-mark':'Mark'} 2 points</button><label>Known distance <input type="number" min="0.1" step="0.1" value="${S.mm}" oninput="S.mm=+this.value;upd()"> mm</label></div><div id="inf" class="inf"></div><div class="rw"><button id="ok" class="b pri" onclick="okCal()">Confirm calibration →</button><button class="b" onclick="skip()">Skip (use px)</button></div>`;
+else if(stage==2)h+=`<div class="rw"><span class="mut">Choose a landmark, tap the image to place it, then drag to adjust (a magnifier follows your finger).</span></div><div class="lmg">${lmHTML()}</div><div id="bn" class="rw"></div><div id="inf" class="inf"></div><div class="rw"><button id="ok" class="b pri" onclick="okCora()">Confirm CORA →</button></div>`+anHTML();
+else{h+='<div class="rw">'+[['orig','Original'],['plan','Planned'],['corr','Corrected']].map(v=>`<button class="b${view==v[0]?' pri':''}" onclick="view='${v[0]}';renderPanel();R()">${v[1]}</button>`).join('')+'<button class="b pri" onclick="addOst()">+ Osteotomy</button></div><div class="rw">'+S.osts.map((o,i)=>`<button class="b${i==act?' pri':''}" onclick="act=${i};renderPanel();R()">Osteotomy ${i+1}</button>`).join('')+'</div>';
+const o=S.osts[act];if(o)h+=`<div class="rw"><label>Correction <input type="number" step="0.1" value="${o.ang}" onchange="setAng(this.value)"> °</label><select onchange="snap();S.osts[act].type=this.value;applyType(S.osts[act]);R();upd()"><option value="closing"${o.type=='closing'?' selected':''}>Closing wedge</option><option value="opening"${o.type=='opening'?' selected':''}>Opening wedge</option><option value="dome"${o.type=='dome'?' selected':''}>Dome (centred on CORA)</option><option value="neutral"${o.type=='neutral'?' selected':''}>Neutral / rotation</option></select><button class="b" onclick="delOst()">Delete</button></div>`;
+h+='<div id="inf" class="inf"></div>'+gdHTML()}
+$('#p2').innerHTML=h+'</div>';upd();hintUpd()}
+function upd(){const e=$('#inf');if(!e)return;let h='';
+if(stage==1){const c=S.cal,px=c?D(c[0],c[1]):0;h=c?`Distance: ${px.toFixed(1)} px · Scale: <b>${S.mm>0?(px/S.mm).toFixed(3):'—'}</b> px/mm`:'No reference marked yet.';const b=$('#ok');if(b)b.disabled=!(c&&S.mm>0&&px>1)}
+else if(stage==2){const c=cora();h=S.ax&&c?`Deformity angle: <b>${Math.abs(dA()).toFixed(1)}°</b><br>CORA: x ${mmS(c.x)} · y ${mmS(c.y)} (from image corner)`:S.ax?'Axes are parallel: no CORA.':'Draw the proximal and distal reference axes.';const b=$('#ok');if(b)b.disabled=!c}
+else h=S.osts.map((o,i)=>{const L=Math.max(D(o.H,o.A),D(o.H,o.B));return `#${i+1} · ${o.ang}° · ${o.type} · wedge ≈ <b>${mmS(2*L*Math.sin(Math.abs(o.ang)*Math.PI/360))}</b>`}).join('<br>')||'Tap + Osteotomy to start planning.';
+e.innerHTML=h;if(stage==2)anUpd();else if(stage==3)gdUpd()}
+/* ---------- landmarks and automatic analysis ---------- */
+const PL={cor:{n:[88,87,89],tp:1,ta:0},sag:{n:[83,81,80],tp:0,ta:1}};
+const U=(a,b)=>{const l=Math.hypot(b.x-a.x,b.y-a.y)||1;return{x:(b.x-a.x)/l,y:(b.y-a.y)/l}},dot=(a,b)=>a.x*b.x+a.y*b.y,crs=(a,b)=>a.x*b.y-a.y*b.x,ng=v=>({x:-v.x,y:-v.y}),rv=(v,t)=>({x:v.x*Math.cos(t)-v.y*Math.sin(t),y:v.x*Math.sin(t)+v.y*Math.cos(t)}),angV=(a,b)=>Math.acos(Math.max(-1,Math.min(1,dot(a,b))))*180/Math.PI;
+const pickDir=(u,deg,ref)=>{const t=deg*Math.PI/180,a=rv(u,t),b=rv(u,-t);return dot(a,ref)>=dot(b,ref)?a:b};
+const LMN=pl=>{const c=pl=='cor',x=c?['lateral','medial']:['posterior','anterior'];return['Hip centre (femoral head)',c?'Greater trochanter tip':'Proximal femoral shaft (mid-diaphysis)','Knee centre','Distal femoral joint line · '+x[0]+' point','Distal femoral joint line · '+x[1]+' point','Tibial plateau · '+x[0]+' point','Tibial plateau · '+x[1]+' point','Ankle centre','Plafond · '+x[0]+' point','Plafond · '+x[1]+' point']};
+function derive(){const L=S.lm;if(!L||L.length<10||!L.every(Boolean)){S.ax=null;S.res=null;return}
+const[HC,P2,KC,fA,fB,tA,tB,AC,aA,aB]=L,P=PL[cur.pl],T=P.tp?tB:tA,J=P.ta?aB:aA,r={},h=U(HC,AC),tt=dot({x:KC.x-HC.x,y:KC.y-HC.y},h),F={x:HC.x+h.x*tt-KC.x,y:HC.y+h.y*tt-KC.y};
+if(S.px)r.mad=dot(F,U(fA,fB))/S.px;
+r.ldfa=angV(U(KC,HC),U(KC,fA));r.tpa=angV(U(KC,AC),U(KC,T));r.dta=angV(U(AC,KC),U(AC,J));
+if(cur.pl=='cor'){r.lpfa=angV(U(HC,KC),U(HC,P2));const m1=U(fA,fB),m2=U(tA,tB);r.jlca=Math.atan2(crs(m1,m2),dot(m1,m2))*180/Math.PI*Math.sign(crs(m1,U(KC,HC)))}
+const K=cur.pl=='cor'?{mad:'mad',ldfa:'mldfa',tpa:'mpta',dta:'ldta',lpfa:'lpfa',jlca:'jlca'}:{mad:'sagmad',ldfa:'pdfa',tpa:'ppta',dta:'adta'};
+for(const k in K)if(r[k]!=null)AN[K[k]]=+r[k].toFixed(1);
+let g=U(HC,P2);if(cur.pl=='cor')g={x:-g.y,y:g.x};const d1=dot(g,U(HC,KC))>=0?g:ng(g),
+q1=pickDir(U(KC,fA),P.n[0],U(KC,HC)),p1=pickDir(U(KC,T),P.n[1],U(KC,AC)),q2=pickDir(U(AC,J),P.n[2],U(AC,KC)),fa=angV(d1,ng(q1)),ta=angV(p1,ng(q2)),lf=D(HC,KC),lt=D(KC,AC),at=(o,v,l)=>({x:o.x+v.x*l,y:o.y+v.y*l});
+if(!S.bone)S.bone=fa>=ta?'femur':'tibia';S.res={bones:{femur:fa,tibia:ta}};
+S.ax=S.bone=='femur'?{p:[HC,at(HC,d1,lf)],d:[at(KC,q1,lf),KC]}:{p:[KC,at(KC,p1,lt)],d:[at(AC,q2,lt),AC]}}
+function drawLM(){const L=S.lm||[];if(L.length>=10&&L.every(Boolean)){[[3,4],[5,6],[8,9]].forEach(([i,j])=>ln(L[i],L[j],'#facc15',2));ln(L[0],L[2],'#22d3ee',1.5,1);ln(L[2],L[7],'#22d3ee',1.5,1);ln(L[0],L[7],'#a3e635',1.5,1)}
+const N=['Hip',cur.pl=='cor'?'GT':'Shaft','Knee','','','','','Ankle','',''];L.forEach((p,i)=>{if(!p)return;dt(p,'#22d3ee',7);if(N[i]){const z=w2s(p.x,p.y);tx(N[i],z[0]+24,z[1]-10)}})}
+function setBone(b){S.bone=b;derive();renderPanel();R()}
+function applyType(o){const c=cora();if(!c||!S.ax)return;const p=S.ax.p,d=S.ax.d,n=v=>{const l=Math.hypot(v.x,v.y)||1;return{x:v.x/l,y:v.y/l}},vp=n({x:p[1].x-p[0].x,y:p[1].y-p[0].y}),vd=n({x:d[1].x-d[0].x,y:d[1].y-d[0].y}),cx=n({x:vp.x-vd.x,y:vp.y-vd.y}),f=e=>dot({x:e.x-c.x,y:e.y-c.y},cx),cvx=f(o.A)>=f(o.B)?o.A:o.B,cc=cvx===o.A?o.B:o.A;
+o.H=o.type=='opening'?{x:cvx.x,y:cvx.y}:o.type=='closing'?{x:cc.x,y:cc.y}:{x:c.x,y:c.y}}
+function pick(i){sel=i;use(i);document.querySelectorAll('.vw').forEach((e,k)=>e.classList.toggle('on',k==i));renderPanel();R()}
+function setPlane(i){lay=i+1;$('#v0').style.display=i?'none':'';$('#v1').style.display=i?'':'none';sel=i;resize();SH.forEach((sh,k)=>{use(k);if(!cur.fd&&img&&W){fit();cur.fd=1}});pick(i);document.querySelectorAll('.pl').forEach((b,k)=>b.classList.toggle('pri',k==i))}
+/* landmark picker: choose a point, tap to place, drag to adjust */
+function lmHTML(){return LMN(cur.pl).map((n,i)=>`<button class="b lm${cur.lmi===i?' pri':''}" onclick="selLM(${i})">${S.lm&&S.lm[i]?'✓ ':''}${n}</button>`).join('')}
+function selLM(i){cur.lmi=cur.lmi===i?null:i;renderPanel();R()}
+function setLM(x,y){snap();while(S.lm.length<10)S.lm.push(null);const i=cur.lmi,p={x,y};S.lm[i]=p;S.bone='';cur.lmi=null;for(let k=1;k<=10;k++){const j=(i+k)%10;if(!S.lm[j]){cur.lmi=j;break}}drag={t:'h',p,sn:1};renderPanel();R()}
+/* ---------- Paley deformity analysis ---------- */
+const PAR=[
+['mad','MAD (+medial / −lateral)','mm',0,15,'Genu valgum','Genu varum','8 ± 7 mm'],
+['lpfa','LPFA','°',85,95,'Proximal femoral source (low)','Proximal femoral source (high)','90°'],
+['mldfa','mLDFA','°',85,90,'Femoral source of VALGUS','Femoral source of VARUS','88°'],
+['mpta','MPTA','°',85,90,'Tibial source of VARUS','Tibial source of VALGUS','87°'],
+['ldta','LDTA','°',86,92,'Supramalleolar VALGUS','Supramalleolar VARUS','89°'],
+['jlca','JLCA','°',0,2,'Lateral convergence','JLCA > 2°: cartilage/bone loss or collateral laxity — compare stress views','0–2°'],
+['sagmad','Sagittal axis (+anterior to knee centre)','mm',0,15,'Axis behind knee: procurvatum / fixed-flexion equivalent','Axis too anterior: recurvatum','0–15 mm'],
+['pdfa','PDFA','°',79,87,'Distal femoral PROCURVATUM','Distal femoral RECURVATUM','83°'],
+['ppta','PPTA','°',77,84,'Proximal tibial PROCURVATUM (↑ slope, ACL strain)','Proximal tibial RECURVATUM (PCL strain)','81°'],
+['adta','ADTA','°',78,82,'Distal tibial RECURVATUM (calcaneus gait / impingement)','Distal tibial PROCURVATUM (blocks dorsiflexion)','80°']];
+function anHTML(){const a=AN;let h='<details open><summary><b>Deformity analysis (Paley)</b></summary><div class="mut">Type values, or tap ↙ to take the last Angle measurement.</div>';
+PAR.forEach((p,i)=>{if(i==0||i==6)h+=`<div class="gh">${i?'SAGITTAL':'CORONAL'}</div>`;
+h+=`<div class="pr"><label>${p[1]} <small>${p[7]}</small></label><input id="an_${p[0]}" type="number" step="0.1" value="${a[p[0]]??''}" oninput="setAn('${p[0]}',this.value)"><button class="b" onclick="fromAng('${p[0]}')" title="Use last angle">↙</button><span class="s" id="st_${p[0]}"></span></div>`});
+return h+`<div class="gh">CORA &amp; PLANE</div><div class="pr"><label>Sagittal magnitude</label><input type="number" step="0.1" value="${a.sg??''}" oninput="setAn('sg',this.value)"><span>°</span></div><label class="ck"><input type="checkbox" ${a.multi?'checked':''} onchange="AN.multi=this.checked;upd()"> CORA lies in the joint / outside the bone / ≠ radiographic apex</label><label class="ck"><input type="checkbox" ${a.same?'checked':''} onchange="AN.same=this.checked;upd()"> Coronal and sagittal CORA at the same level</label><div id="an2" class="inf"></div></details>`}
+function setAn(k,v){AN[k]=v===''?null:+v;upd()}
+function lastAng(){for(let i=S.m.length-1;i>=0;i--)if(S.m[i].t=='a'){const P=S.m[i].pts,a1=Math.atan2(P[0].y-P[1].y,P[0].x-P[1].x),a2=Math.atan2(P[2].y-P[1].y,P[2].x-P[1].x);return Math.abs(Math.atan2(Math.sin(a2-a1),Math.cos(a2-a1)))*180/Math.PI}return null}
+function fromAng(k){const v=lastAng();if(v==null)return alert('Measure an angle first (Angle tool in Panel 1)');AN[k]=+v.toFixed(1);const e=$('#an_'+k);if(e)e.value=AN[k];upd()}
+function anUpd(){const a=AN;let F=[];const bn=$('#bn');if(bn&&S.res)bn.innerHTML=['femur','tibia'].map(b=>`<button class="b${S.bone==b?' pri':''}" onclick="setBone('${b}')">${b=='femur'?'Femur':'Tibia'} · ${S.res.bones[b].toFixed(1)}°</button>`).join('')+'<span class="mut">larger deformity auto-selected</span>';
+PAR.forEach(p=>{const v=a[p[0]],e=$('#st_'+p[0]);if(!e)return;const ip=$('#an_'+p[0]);if(ip&&ip!==document.activeElement&&v!=null)ip.value=v;if(v==null){e.innerHTML='';return}const lo=v<p[3],hi=v>p[4];e.innerHTML=lo||hi?`<span style="color:#f87171">● ${lo?p[5]:p[6]}</span>`:'<span style="color:#4ade80">● Normal</span>';if(lo||hi)F.push(p[0])});
+let h='';if(a.mad!=null&&F.indexOf('mad')<0)h+='MAD normal — still check femur and tibia for a compensated bi-segmental deformity.<br>';
+if(S.ax)h+=`CORA type: <b>${a.multi?'Complex (multifocal / translational)':'Simple (unifocal)'}</b>`+(a.multi?' — add a middle-segment axis to resolve a proximal and a distal CORA.':'')+'<br>';
+const dof=z=>z.S.ax?Math.abs(dAof(z.S)):null,C=dof(SH[0]),Sg=dof(SH[1])||a.sg;
+if(C!=null&&Sg>0&&a.same){const tc=Math.tan(C*Math.PI/180),ts=Math.tan(Sg*Math.PI/180),A=Math.atan(Math.hypot(tc,ts))*180/Math.PI,al=Math.atan2(ts,tc)*180/Math.PI;h+=`Single oblique-plane deformity: magnitude <b>${A.toFixed(1)}°</b>, plane <b>${al.toFixed(1)}°</b> from the coronal plane → hinge axis perpendicular to this plane (oblique wedge, focal dome or hexapod).`}
+else if(Sg>0)h+='Tick “same level” when the coronal and sagittal CORA coincide to get the oblique-plane magnitude.';
+$('#an2').innerHTML=h}
+function gdHTML(){const a=AN,o=(v,t)=>`<option value="${v}"${(a.tgt||'phys')==v?' selected':''}>${t}</option>`;
+return `<details open><summary><b>Planning guidance (Paley)</b></summary><div class="rw"><label>Target WBL <select onchange="AN.tgt=this.value;upd()">${o('phys','Physiologic · 50% (knee centre)')}${o('varoa','Medial OA / varus · 55–62.5%')}${o('valoa','Lateral OA / valgus · 45–50%')}</select></label></div><div class="rw"><label>LLD <input type="number" step="0.1" value="${a.lld??''}" oninput="setAn('lld',this.value)"> cm</label><label class="ck"><input type="checkbox" ${a.soft?'checked':''} onchange="AN.soft=this.checked;upd()"> Poor soft tissue</label><label class="ck"><input type="checkbox" ${a.nerve?'checked':''} onchange="AN.nerve=this.checked;upd()"> Peroneal-nerve risk</label></div><div id="gd" class="inf"></div></details>`}
+function gdUpd(){const a=AN,L=[],c=cora(),tol=S.px?5*S.px:(img?img.width*.01:10);
+L.push('Target WBL: <b>'+{phys:'50% (knee centre)',varoa:'55–62.5% (Fujisawa; lateral tibial spine)',valoa:'45–50% (neutral / medial spine)'}[a.tgt||'phys']+'</b>');
+if(c)S.osts.forEach((o,i)=>{const dl=Math.abs((o.B.x-o.A.x)*(c.y-o.A.y)-(o.B.y-o.A.y)*(c.x-o.A.x))/(D(o.A,o.B)||1),dh=D(o.H,c),cu=dl<tol||o.type=='dome',hi=dh<tol,t=Math.abs(o.ang)*Math.PI/180;
+L.push(`#${i+1}: `+(cu&&hi?'<b>Rule 1</b> — cut and hinge at CORA: pure angulation, no translation.':!cu&&hi?`<b>Rule 2</b> — cut ${mmS(dl)} from CORA, hinge at CORA: angulation + translation (≈ ${mmS(dl*Math.tan(t))}); translate the distal fragment.`:'<span style="color:#f87171"><b>Rule 3</b> — hinge away from CORA: secondary translational (zig-zag) deformity.</span>'))});
+const corr=Math.max(0,...S.osts.map(o=>Math.abs(o.ang)));
+if(corr>0){const mp=a.mpta,ml=a.mldfa,pm=mp==null?null:mp<85?mp+corr:mp>90?mp-corr:null,pl=ml==null?null:ml<85?ml+corr:ml>90?ml-corr:null;
+if(pm!=null)L.push(`Projected MPTA (single level, ${corr.toFixed(1)}°): <b>${pm.toFixed(1)}°</b>`+(pm>93?' <span style="color:#f87171">&gt; 93° → joint-line obliquity; consider double-level (DFO + HTO).</span>':''));
+if(pl!=null)L.push(`Projected mLDFA: <b>${pl.toFixed(1)}°</b>`+(pl<85?' <span style="color:#f87171">&lt; 85° → joint-line obliquity; consider double-level.</span>':''))}
+const A0=S.ax?Math.abs(dA()):0;let M=Math.max(A0,corr);if(S.ax&&a.sg>0&&a.same)M=Math.max(M,Math.atan(Math.hypot(Math.tan(A0*Math.PI/180),Math.tan(a.sg*Math.PI/180)))*180/Math.PI);
+const why=[a.multi&&'complex CORA',M>20&&'magnitude > 20°',a.lld>2&&'LLD > 2 cm',a.soft&&'poor soft tissue',a.nerve&&'nerve-traction risk'].filter(Boolean);
+L.push('Fixation: '+(why.length?`<b>Gradual</b> (hexapod / TSF / Ilizarov) — ${why.join(', ')}.`:`<b>Acute</b> (locking plate / IM nail) — simple CORA, ${M.toFixed(1)}°${M>15?' (near the 15–20° limit for acute correction)':''}.`));
+if(S.osts.some(o=>o.type=='opening'))L.push('Opening-wedge HTO: keep the hinge posteromedial and the anterior gap ½–⅔ of the posteromedial gap, to avoid raising the tibial slope.');
+$('#gd').innerHTML=L.join('<br>')}
+/* ---------- files ---------- */
+async function loadFile(f,k=sel){try{const b=await createImageBitmap(f),z=Math.min(1,4096/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=b.width*z|0;c.height=b.height*z|0;c.getContext('2d').drawImage(b,0,0,c.width,c.height);setImg(c.toDataURL('image/jpeg',.92),k)}catch(e){alert('Cannot open this image')}}
+function setImg(u,k=sel){const t=SH[k],i=new Image();t.imgURL=u;i.onload=()=>{t.img=i;const b=cur;use(k);fit();cur.fd=!!W;cur=b;R()};i.src=u}
+$('#fi').onchange=e=>{if(e.target.files[0])loadFile(e.target.files[0]);e.target.value=''};
+$('#fj').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{const j=JSON.parse(await f.text());if(!j.sheets)throw 0;Object.keys(AN).forEach(k=>delete AN[k]);Object.assign(AN,j.AN||{});$('#cn').value=j.name||'';j.sheets.forEach((d,i)=>{const t=SH[i];t.S=Object.assign(mkS(),d.S);t.S.lm=t.S.lm||[];t.hist=[];t.redo=[];t.arm=null;t.act=t.S.osts.length-1;t.img=null;if(d.img)setImg(d.img,i)});maxS=SH.some(t=>t.S.lm.filter(Boolean).length>=10)?3:SH.some(t=>t.S.px)?2:1;stage=1;pick(sel)}catch(x){alert('Invalid case file')}};
+function dl(b,n){const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),6000)}
+function saveCase(){if(!SH.some(t=>t.img))return alert('Upload an X-ray first');dl(new Blob([JSON.stringify({v:2,name:$('#cn').value,AN,sheets:SH.map(t=>({S:t.S,img:t.imgURL}))})],{type:'application/json'}),($('#cn').value||'case')+'.orthoaxis.json')}
+function exportPNG(){SH.forEach((t,i)=>{use(i);draw()});use(sel);const cs=SH.filter(t=>t.img&&t.W).map(t=>t.cv);if(!cs.length)return;const o=document.createElement('canvas');o.width=cs.reduce((a,c)=>a+c.width,0);o.height=Math.max(...cs.map(c=>c.height));const g=o.getContext('2d');let x=0;cs.forEach(c=>{g.drawImage(c,x,0);x+=c.width});o.toBlob(async bl=>{const f=new File([bl],($('#cn').value||'case')+'.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]});return}catch(e){if(e.name=='AbortError')return}}dl(bl,f.name)})}
+function newCase(){if(SH.some(t=>t.img)&&!confirm('Start a new case? Unsaved work will be lost.'))return;SH.forEach(t=>{t.S=mkS();t.img=null;t.imgURL='';t.hist=[];t.redo=[];t.arm=null;t.act=-1});Object.keys(AN).forEach(k=>delete AN[k]);AN.same=true;stage=1;maxS=1;$('#cn').value='Case-001';pick(sel)}
+addEventListener('dragover',e=>e.preventDefault());addEventListener('drop',e=>{e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadFile(f)});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+resize();renderPanel();setPlane(0);
+</script></body></html>
